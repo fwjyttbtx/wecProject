@@ -1,0 +1,32 @@
+{
+  "models": [{
+    "name": "busPlanList",
+    "appName": "busService",
+    "modelName": "班车安排列表",
+    "controls": [{
+      "name": "busStart",
+      "dataType": "string",
+      "width": 200,
+      "caption": "发车时间"
+    }, {
+      "name": "busNum",
+      "width": 200,
+      "dataType": "integer",
+      "caption": "班车数量"
+    }, {
+      "name": "lineType",
+      "width": 200,
+      "dataType": "string",
+      "caption": "线路类型"
+    }, {
+      "name": "runTime",
+      "width": 200,
+      "dataType": "string",
+      "caption": "运行时间"
+    }, {
+      "name": "runningState",
+      "dataType": "boolean",
+      "caption": "状态"
+    }]
+  }]
+}

@@ -1,0 +1,22 @@
+{
+  "datas": {
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalSize": 2,
+    "rows": [{
+      "busStart": "19:00",
+      "busNum": 1,
+      "lineType": "工作日线路",
+      "runTime": "周期性车次",
+      "runningState": true
+    }, {
+      "busStart": "20:00",
+      "busNum": 1,
+      "lineType": "其他",
+      "runTime": "周期性车次",
+      "runningState": false
+    }]
+  },
+  "code": 0,
+  "message": null
+}
