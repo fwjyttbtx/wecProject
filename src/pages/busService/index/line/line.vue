@@ -1,7 +1,7 @@
 <template>
   <h2>线路管理</h2>
   <div class="bh-col-md-4 bh-mt-16 bh-pl-0">
-    <bh-search @search='search' :value.sync='searchLineName' placeholder='请输入线路名称'></bh-search>
+    <bh-search @search='search' :value.sync='searchInput' placeholder='请输入线路名称'></bh-search>
   </div>
   <div class="bh-mt-32 bh-col-md-12 bh-pl-0">
     <button type="button" class="bh-btn bh-btn-primary add-line-btn" @click="addNewLine">
@@ -24,8 +24,8 @@
           <i class="iconfont icon-arrowdownward"></i>
           -->
           <i class="iconfont2 icon-bus-edit" @click="editLine(line)"></i>
-          <i class="iconfont2 icon-bus-bin" @click="deleteLine"></i>
-          <a href="javascript:void(0);" @click="busPlan">班车安排</a>
+          <i class="iconfont2 icon-bus-bin" @click="deleteLine(line)"></i>
+          <a href="javascript:void(0);" @click="busPlan(line)">班车安排</a>
         </div>
       </div>
     </div>
@@ -58,11 +58,14 @@
   export default {
     data() {
       return {
-        searchLineName: '',
+        searchInput: '',
         lineData: {}
       }
     },
     methods: {
+      reloadLines() {
+        this.lineDatasFill();
+      },
       search() {
         this.lineDatasFill();
       },
@@ -71,24 +74,38 @@
           lineName: '',
           directionId: '',
           stations: [
-            {stationsId: '', lastItem: true}
+            {stationDicId: '', stationId: ''}
           ]
         };
         showLineDialog();
       },
       deleteLine(line) {
-        this.lineDatasFill();
+        BH_UTILS.bhDialogWarning({title: "确定删除吗", content: " ", callback: () => {
+            this.$http.post(service.api.deleteBusLineUrl, {lineId: line.lineId}).then((resp) => {
+              let body = resp.body;
+              if (body.code === 200) {
+                this.lineDatasFill();
+              } else {
+                BH_UTILS.bhDialogDanger({
+                  title: "班车线路删除失败",
+                  content: body.msg,
+                  buttons: [{text: "确定", className: 'bh-btn-danger'}]
+                });
+              }
+            });
+          }
+        });
       },
-      gotoPage() {
-        this.lineDatasFill();
+      gotoPage(pageNumber) {
+        this.lineDatasFill(pageNumber);
       },
-      lineDatasFill() {
+      lineDatasFill(pageNumber) {
         let param = {};
-        param.searchName = this.searchLineName;
+        param.searchInput = this.searchInput;
         param.pageSize = this.lineData.pageSize || 10;
-        param.pageNumber = this.lineData.pageNumber + 1 || 0;
-        $.get(service.api.busLines, param).done((res)=>{
-          this.lineData = res;
+        param.pageNumber = pageNumber || 0;
+        this.$http.post(service.api.busLines, param).then((response) => {
+          this.lineData = response.body;
         });
       },
       editLine(line) {
@@ -96,15 +113,17 @@
         showLineDialog();
       },
       busPlan(line) {
+        this.ps.line = line;
         showBusDialog();
       }
     },
     ready() {
-      $.get(service.api.busMetaDirections).done((res)=>{
-        this.ps.directions = res.datas;
+      $('body>main>article>*').css('display', 'table-cell');
+      this.$http.post(service.api.busMetaDirections).then((response)=>{
+        this.ps.directions = response.body.datas;
       });
-      $.get(service.api.busMetaStations).done((res)=>{
-        this.ps.stations = res.datas;
+      this.$http.post(service.api.busMetaStations).then((response)=>{
+        this.ps.stations = response.body.datas;
       });
       this.lineDatasFill();
     },

@@ -6,10 +6,10 @@
         <span @click="addNewRecommend">添加站-站推荐</span>
       </div>
     </div>
-    <template v-for="recommend in recommends">
-      <div class="bh-mb-10 recommend-item" v-if="recommend.isShow">
+    <template v-for="recommend in ps.recommends">
+      <div class="bh-mb-10 recommend-item" v-if="recommend.isShow" data-id="{{recommend.recommendId}}">
         <div class="bh-border bh-center-block bh-ph-8">
-          {{recommend.recommendStart}}-{{recommend.recommendEnd}}
+          {{recommend.startStationName}}-{{recommend.endStationName}}
           <i class="iconfont2 icon-bus-bin" @click="deleteRecommend(recommend)"></i>
           <i class="iconfont2 icon-bus-edit" @click="editMode(recommend)"></i>
           <i class="iconfont2 icon-bus-drag"></i>
@@ -21,14 +21,6 @@
 <script type="text/ecmascript-6">
   import service from '../../service'
   import station2Station from './station2Station.vue'
-
-  let makeEleSortable = ()=> {
-    Sortable.create(document.getElementById("stationRecommendNotes"), {
-      animation: 150,
-      draggable: ".recommend-item",
-      handle: ".icon-bus-drag"
-    });
-  };
 
   let showStation2StationDialog = (oper)=> {
     Utils.dialog({
@@ -52,29 +44,64 @@
     },
 
     ready(){
-      $.get(service.api.busRecommendsGet).done((res)=>{
-        _.each(res.datas, (recommend) => {
+      $('body>main>article>*').css('display', 'table-cell');
+      this.$http.post(service.api.busRecommendsGet).then((response) => {
+        let body = response.body;
+        _.each(body.datas, (recommend) => {
             recommend.isShow = true;
         });
-        this.recommends = res.datas;
+        this.ps.recommends = body.datas;
+        Sortable.create(document.getElementById("stationRecommendNotes"), {
+          animation: 150,
+          draggable: ".recommend-item",
+          handle: ".icon-bus-drag",
+          onUpdate: (evt) => {
+            let itemArr = $(evt.from).find(".recommend-item");
+            let recommendSorts = [];
+            _.forEach(itemArr, (item, idx) => {
+              recommendSorts.push({recommendId: $(item).data("id"), recommendSort: idx});
+            });
+            this.$http.post(service.api.updateBusRecommendSortUrl, {sortedRecommends: JSON.stringify(recommendSorts)}).then((response) => {
+              let body = response.body;
+              if(body.code !== 200) {
+                Utils.tip("danger", body.body);
+              }
+            });
+          }
+        });
       });
-      $.get(service.api.busMetaStations).done((res)=>{
-        this.ps.stations = res.datas;
+      this.$http.post(service.api.busMetaStations).then((response)=>{
+        this.ps.stations = response.body.datas;
       });
-      makeEleSortable();
     },
     methods: {
       addNewRecommend() {
-        this.ps.recommend = {};
+        this.ps.recommend = {start: {stationId: ""}, end: {stationId: ""}};
         showStation2StationDialog("添加");
       },
       editMode(recommend) {
+        this.ps.recommend.recommendId = recommend.recommendId;
         this.ps.recommend.start = {stationId: recommend.startId};
         this.ps.recommend.end = {stationId: recommend.endId};
         showStation2StationDialog("编辑");
       },
       deleteRecommend(recommend) {
-        recommend.isShow = false;
+        BH_UTILS.bhDialogWarning({
+          title: "确定删除吗", content: " ", callback: () => {
+            this.$http.post(service.api.removeSearchRecommend, {recommendId: recommend.recommendId}).then((response) => {
+              let body = response.body;
+              if (body.code === 200) {
+                recommend.isShow = false;
+              } else {
+                BH_UTILS.bhDialogDanger({
+                  title: "搜索推荐删除失败",
+                  content: body.msg,
+                  buttons: [{text: "确定", className: 'bh-btn-danger'}]
+                });
+              }
+            });
+          }
+        });
       }
     }
   }

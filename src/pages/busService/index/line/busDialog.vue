@@ -2,8 +2,8 @@
   <div class="bh-col-md-12 line-row">
     <i class="iconfont2 icon-bus-signpost"></i>
     <div class="line-detail">
-      <span class="h3">线路1</span>
-      <div class="bh-text-caption bh-caption-default">站点1→站点2→站点3→站点4→站点5→站点6→站点7</div>
+      <span class="h3">{{line.lineName}}</span>
+      <div class="bh-text-caption bh-caption-default">{{line.lineCombine}}</div>
     </div>
     <button @click="addNewBus" class="bh-btn bh-btn-primary bus-add-btn" type="button">
       <i class="iconfont icon-add"></i>添加班车
@@ -13,7 +13,7 @@
     <emap-datatable v-ref:dt1 :options='options' @edit='edit' @del='del' @change="busRunningStateChange"></emap-datatable>
   </div>
 </template>
-<script>
+<script type="text/ecmascript-6">
   import service from '../../service'
   import EmapDatatable from 'bh-vue/emap-datatable/emapDatatable.vue'
   import busInfoDialog from './busInfoDialog.vue'
@@ -28,18 +28,20 @@
   export default {
     data() {
       return {
+        line: {},
         options: {
           pagePath: service.api.busPlanMetaModel,
           url: service.api.busPlanDatas,
+          lazyInit: true,
+          params: {lineId: Number},
           action: "busPlanList",
-          method: 'get',
           readyName: 'datatableReady',
           customColumns: [
             {
               type: 'tpl',
-              colField: 'runningState',
+              colField: 'isRunning',
               column: {
-                cellsRenderer: function(row, column, value, rowData) {
+                cellsRenderer: (row, column, value, rowData) => {
                     if(value) {
                       return  '<div class="bh-switch bus-running-state">' +
                               '   <label class="bh-switch-label bh-color-success">运行中</label>' +
@@ -73,19 +75,54 @@
         }
       }
     },
+    ready() {
+      this.line = this.ps.line;
+      this.options.params.lineId = this.ps.line.lineId;
+      this.$refs.dt1.init();
+    },
     components: {EmapDatatable},
     methods: {
       busRunningStateChange() {
-        console.log(arguments);
+        let busId = args.row.busId;
+        let $target = $(args.originalEvent.target);
+        let checked = $target.prop("checked");
+        this.$http.post(service.api.changeBusRunningStateUrl, {
+          busId: busId,
+          isRunning: checked
+        }).then(response => {
+          let body = response.body;
+          if(body.code === 200) {
+            if(checked) {
+              $target.prev("label").addClass("bh-color-success").text("运行中");
+            } else {
+              $target.prev("label").removeClass("bh-color-success").text("停运");
+            }
+          } else {
+            Utils.tip("danger", body.msg);
+          }
+        });
+      },
+      reloadTable() {
+        this.$refs.dt1.reloadFirstPage();
       },
       edit() {
-        alert("edit bus info");
+        this.ps.busId = args.row.busId;
+        showBusInfoDialog("编辑");
       },
       del() {
-        alert("delete bus info");
+        BH_UTILS.bhDialogWarning({title: "确定删除吗", content: " ", callback: () => {
+            this.$http.post(service.api.deletedBusWithBusId, {busId: args.row.busId}).then(response => {
+              if (response.body.code === 200) {
+                this.reloadTable();
+              } else {
+                Utils.tips("danger", response.body.msg);
+              }
+            });
+          }
+        });
       },
       addNewBus() {
-        this.ps.line = {lineName: "线路名称1", stations: [{stationName: "站点1"}, {stationName: "站点2"}]};
+        this.ps.busId = null;
         showBusInfoDialog("添加");
       }
     },

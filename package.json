@@ -11,6 +11,7 @@
   "dependencies": {
     "ubase-vue": "^1.0.48",
     "bh-vue": "^1.2.8",
-    "wec-vue": "^0.1.7"
+    "wec-vue": "^0.1.7",
+    "vue-form": "0.3.1"
   }
 }

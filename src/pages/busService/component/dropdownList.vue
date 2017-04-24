@@ -2,7 +2,7 @@
   <div></div>
 </template>
 
-<script>
+<script type="text/ecmascript-6">
   /**
    * 简单下拉列表组件
    * @module BhDropdown

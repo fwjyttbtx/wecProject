@@ -14,6 +14,11 @@
   import BhNav from 'bh-vue/bh-nav/bhNav.vue'
   require('statics/busIcons/iconfont.css')
 
+  Vue.http.options.emulateJSON = true;
+  Vue.http.options.headers = {
+    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+  };
+
   export default {
     data: () => {
       return {
@@ -45,12 +50,16 @@
   article[bh-layout-role=navLeft] nav {
     padding: 0 !important;
   }
-  /**
+
   article>* {
-    display: table-cell !important;
+    display: table-cell;
   }
-  */
+
   .bh-ml-0 {
     margin-left: 0 !important;
+  }
+  .sortable-ghost>div {
+    opacity: 0.4;
+    background-color: #F4E2C9;
   }
 </style>
